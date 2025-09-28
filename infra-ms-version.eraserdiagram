@@ -1,0 +1,70 @@
+//cloud-architecture-diagram
+
+direction right
+
+EndUserGUI [icon : user]
+WebBrowser [icon: firefox]
+EndUserAPI [icon : api]
+Cloud [icon: cloud]
+
+// Define groups and nodes
+CloudProvider[icon: aws]{
+  CDN[icon: aws-s3]
+  DNS[icon: aws-route-53]
+  Region {
+      VPC [icon: aws-vpc] {
+          InternetGateway [icon: aws-internet-gateway]
+          PublicSubnet {
+              ReverseProxy [icon: nginx]
+          }
+          
+          PrivateSubnet [color: red] {
+              DockerEngine [icon : linux]{
+                  NetworkPublic{
+                      APIGateway [icon : nginx]
+                  }
+                  NetworkSSO{
+                      Authentication [icon:vault]
+                      SSO-DBEngine[icon: postgres]
+                      SSO-Volume[icon: storage]
+                  }
+                  NetworkFrontend{
+                      Frontend [icon: html5]
+                  }
+                  NetworkBackend{
+                      Backend-MS-Pizzas [icon : spring]
+                      Backend-MS-Reservations [icon : spring]
+                      Backend-MS-Reservations-GET [icon : spring]
+                      Backend-MS-Customers [icon : spring]
+                      Backend-DBEngine [icon : mysql]
+                      Backend-Volume [icon: storage]
+                  }
+              }
+          }
+      }
+  }
+}
+// Define external connections
+EndUserGUI - WebBrowser
+WebBrowser - Cloud : 443-HTTPS
+CDN - Cloud : 443-HTTPS
+DNS - Cloud
+EndUserAPI - Cloud : 443-HTTPS api
+Cloud - InternetGateway : fqdn
+InternetGateway - ReverseProxy : 443-HTTPS
+ReverseProxy - APIGateway : 8000-HTTP
+APIGateway - Authentication : 9000-HTTP    api/login
+
+// Define internal connections
+APIGateway - Frontend : 3000-HTTP
+APIGateway - Backend-MS-Pizzas : 8080-HTTP     api/pizzas
+APIGateway - Backend-MS-Reservations : 8080-HTTP       api/reservations
+APIGateway - Backend-MS-Reservations-GET : 8080-HTTP     api/resevations (get only)
+APIGateway - Backend-MS-Customers : 8080-HTTP api/customers
+Authentication - SSO-DBEngine : 3306-TCP
+Backend-MS-Customers - Backend-DBEngine : 3306-TCP
+Backend-MS-Pizzas - Backend-DBEngine : 3306-TCP
+Backend-MS-Reservations - Backend-DBEngine : 3306-TCP
+Backend-MS-Reservations-GET - Backend-DBEngine : 3306-TCP - READ ONLY
+Backend-DBEngine - Backend-Volume
+SSO-DBEngine - SSO-Volume
